@@ -16,8 +16,18 @@ struct Config {
 
 // 获取配置文件路径
 fn get_config_file() -> Option<PathBuf> {
-    if let Some(config_dir) = dirs::config_dir() {
-        Some(config_dir.join("commit_crafter").join("config.toml"))
+    if let Some(home_dir) = dirs::home_dir() {
+        let config_dir = home_dir.join(".config").join("commit_crafter");
+        
+        // 创建目录（如果不存在）
+        if !config_dir.exists() {
+            if let Err(e) = std::fs::create_dir_all(&config_dir) {
+                println!("警告: 创建配置目录失败: {}", e);
+                return None;
+            }
+        }
+        
+        Some(config_dir.join("config.toml"))
     } else {
         None
     }
@@ -29,13 +39,25 @@ fn check_config() -> bool {
         Some(path) => path,
         None => {
             println!("错误: 无法获取配置目录");
+            println!("配置文件应位于:");
+            if cfg!(target_os = "windows") {
+                println!("  Windows: %APPDATA%\\commit_crafter\\config.toml");
+            } else {
+                println!("  Unix/macOS: ~/.config/commit_crafter/config.toml");
+            }
             return false;
         }
     };
 
     if !config_file.exists() {
         println!("错误: 未找到配置文件 {}", config_file.display());
-        println!("请先安装并配置 commit_crafter");
+        println!("\n请创建配置文件并添加以下内容:");
+        println!("```toml");
+        println!("openai_api_key = \"your-api-key\"");
+        println!("openai_url = \"https://api.openai.com/v1\"");
+        println!("openai_model = \"gpt-3.5-turbo\"");
+        println!("user_language = \"zh\"");
+        println!("```");
         return false;
     }
 

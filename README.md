@@ -87,12 +87,19 @@
 ### 配置文件
 
 #### 文件路径
-配置文件默认位置：`~/.config/commit_crafter/config.toml`
+配置文件位置：
 
-不同系统的实际路径：
-- Linux: `/home/<username>/.config/commit_crafter/config.toml`
-- macOS: `/Users/<username>/.config/commit_crafter/config.toml`
-- Windows: `C:\Users\<username>\.config\commit_crafter\config.toml`
+- Unix/macOS: `~/.config/commit_crafter/config.toml`
+- Windows: `%APPDATA%\commit_crafter\config.toml`
+
+首次使用时，需要创建配置文件并添加以下内容：
+
+```toml
+openai_api_key = "your-api-key"
+openai_url = "https://api.openai.com/v1"
+openai_model = "gpt-3.5-turbo"
+user_language = "zh"
+```
 
 #### 配置项说明
 
