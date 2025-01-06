@@ -257,6 +257,14 @@ fn handle_commit(files: Vec<String>) {
     loop {
         // 2. 调用AI生成提交信息
         println!("正在生成提交信息...");
+        let config = match get_config() {
+            Ok(cfg) => cfg,
+            Err(e) => {
+                println!("获取配置失败: {}", e);
+                return;
+            }
+        };
+        
         let commit_message = match if let Some(ref prompt) = extra_prompt {
             generate_commit_message_with_prompt(&diff, prompt)
         } else {
@@ -270,7 +278,7 @@ fn handle_commit(files: Vec<String>) {
         };
 
         // 3. 显示提交信息并等待确认
-        println!("\n生成的提交信息:");
+        println!("\n生成的提交信息 (使用模型: {}):", config.openai_model);
         println!("{}", "-".repeat(50));
         println!("{}", commit_message);
         println!("{}", "-".repeat(50));
