@@ -250,36 +250,58 @@ user_language = "ja"
 ### 基本使用
 
 ```bash
-# 在 SVN 工作目录中执行
+# 提交所有变更
 svn-hook commit
+
+# 提交指定文件或目录
+svn-hook commit path/to/file1 path/to/file2
+
+# 提交当前目录下的特定文件类型
+svn-hook commit *.py *.js
+
+# 提交指定目录下的所有变更
+svn-hook commit path/to/directory/
 ```
 
 ### 操作选项
 
 - **自动提交**：
   ```bash
-  # 选择 [y] 自动执行提交
+  # 提交所有变更
   svn-hook commit
+  # 输入 y 或直接回车
+
+  # 提交指定文件
+  svn-hook commit path/to/file1 path/to/file2
   # 输入 y 或直接回车
   ```
 
 - **手动提交**：
   ```bash
-  # 选择 [s] 显示提交命令
+  # 提交所有变更
   svn-hook commit
+  # 输入 s 获取命令
+
+  # 提交指定文件
+  svn-hook commit path/to/file1 path/to/file2
   # 输入 s 获取命令
   ```
 
 - **重新生成**：
   ```bash
-  # 选择 [r] 并输入额外提示
+  # 对所有变更重新生成提交信息
   svn-hook commit
+  # 输入 r 然后输入提示词
+
+  # 对指定文件重新生成提交信息
+  svn-hook commit path/to/file1 path/to/file2
   # 输入 r 然后输入提示词
   ```
 
 ### 使用示例
 
 ```bash
+# 示例 1: 提交所有变更
 $ svn-hook commit
 正在获取变更信息...
 正在生成提交信息...
@@ -287,6 +309,23 @@ $ svn-hook commit
 生成的提交信息:
 --------------------------------------------------
 添加用户认证功能
+--------------------------------------------------
+
+选项:
+1. 使用此提交信息并自动提交 [y]
+2. 显示提交命令 [s]
+3. 重新生成 [r]
+4. 退出 [n]
+请选择 [Y/s/r/n]:
+
+# 示例 2: 提交指定文件
+$ svn-hook commit src/auth.py src/config.py
+正在获取变更信息...
+正在生成提交信息...
+
+生成的提交信息:
+--------------------------------------------------
+更新认证配置逻辑
 --------------------------------------------------
 
 选项:

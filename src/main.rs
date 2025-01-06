@@ -97,9 +97,16 @@ fn check_svn_installed() -> bool {
     }
 }
 
-fn get_svn_diff() -> Result<String, String> {
-    let output = Command::new("svn")
-        .arg("diff")
+fn get_svn_diff_for_files(files: &[String]) -> Result<String, String> {
+    let mut command = Command::new("svn");
+    command.arg("diff");
+    
+    // 如果指定了文件，添加到命令中
+    for file in files {
+        command.arg(file);
+    }
+
+    let output = command
         .output()
         .map_err(|e| format!("执行 svn diff 失败: {}", e))?;
 
@@ -109,6 +116,29 @@ fn get_svn_diff() -> Result<String, String> {
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+fn commit_with_message_for_files(message: &str, files: &[String]) -> Result<(), String> {
+    let mut command = Command::new("svn");
+    command.arg("commit")
+        .arg("-m")
+        .arg(message);
+    
+    // 如果指定了文件，添加到命令中
+    for file in files {
+        command.arg(file);
+    }
+
+    let output = command
+        .output()
+        .map_err(|e| format!("执行 svn commit 失败: {}", e))?;
+
+    if !output.status.success() {
+        return Err(format!("svn commit 返回错误: {}", 
+            String::from_utf8_lossy(&output.stderr)));
+    }
+
+    Ok(())
 }
 
 // 添加一个函数来获取配置
@@ -196,23 +226,7 @@ fn generate_commit_message(diff: &str) -> Result<String, String> {
         .to_string())
 }
 
-fn commit_with_message(message: &str) -> Result<(), String> {
-    let output = Command::new("svn")
-        .arg("commit")
-        .arg("-m")
-        .arg(message)
-        .output()
-        .map_err(|e| format!("执行 svn commit 失败: {}", e))?;
-
-    if !output.status.success() {
-        return Err(format!("svn commit 返回错误: {}", 
-            String::from_utf8_lossy(&output.stderr)));
-    }
-
-    Ok(())
-}
-
-fn handle_commit() {
+fn handle_commit(files: Vec<String>) {
     // 首先检查 SVN 是否安装
     if !check_svn_installed() {
         return;
@@ -225,7 +239,7 @@ fn handle_commit() {
 
     // 1. 获取变更
     println!("正在获取变更信息...");
-    let diff = match get_svn_diff() {
+    let diff = match get_svn_diff_for_files(&files) {
         Ok(diff) => diff,
         Err(e) => {
             println!("错误: {}", e);
@@ -273,7 +287,7 @@ fn handle_commit() {
         match input.trim().to_lowercase().as_str() {
             "y" | "" => {
                 println!("\n正在提交...");
-                match commit_with_message(&commit_message) {
+                match commit_with_message_for_files(&commit_message, &files) {
                     Ok(_) => {
                         println!("✅ 提交成功!");
                         break;
@@ -281,14 +295,22 @@ fn handle_commit() {
                     Err(e) => {
                         println!("提交失败: {}", e);
                         println!("\n您可以手动执行以下命令:");
-                        println!("svn commit -m \"{}\"", commit_message);
+                        print!("svn commit -m \"{}\"", commit_message);
+                        for file in &files {
+                            print!(" {}", file);
+                        }
+                        println!();
                         break;
                     }
                 }
             },
             "s" => {
                 println!("\n请使用以下命令提交:");
-                println!("svn commit -m \"{}\"", commit_message);
+                print!("svn commit -m \"{}\"", commit_message);
+                for file in &files {
+                    print!(" {}", file);
+                }
+                println!();
                 break;
             },
             "r" => {
@@ -358,11 +380,20 @@ fn main() {
         .version("0.1.0")
         .about("SVN 提交信息生成工具")
         .subcommand(SubCommand::with_name("commit")
-            .about("生成提交信息"))
+            .about("生成提交信息")
+            .arg(clap::Arg::with_name("files")
+                .help("要提交的文件或目录路径")
+                .multiple(true)
+                .index(1)))
         .get_matches();
 
     match matches.subcommand() {
-        ("commit", Some(_)) => handle_commit(),
+        ("commit", Some(sub_matches)) => {
+            let files: Vec<String> = sub_matches.values_of("files")
+                .map(|values| values.map(String::from).collect())
+                .unwrap_or_else(Vec::new);
+            handle_commit(files)
+        },
         _ => println!("使用 --help 查看帮助信息"),
     }
 } 
