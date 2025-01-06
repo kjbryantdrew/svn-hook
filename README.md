@@ -84,6 +84,7 @@
    git clone <repository_url>
    cd svn_hook
    cargo install --path .
+   rm -rf target/  # 清理编译生成的临时文件
    ```
 
 ### 配置文件
