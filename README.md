@@ -80,10 +80,21 @@
    ```
 
 2. 编译安装：
+
+   方式一：使用安装脚本（推荐）
+   ```bash
+   git clone <repository_url>
+   cd svn_hook
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+   方式二：手动安装
    ```bash
    git clone <repository_url>
    cd svn_hook
    cargo install --path .
+   rm -rf target/  # 清理编译生成的临时文件
    ```
 
 ### 配置文件
