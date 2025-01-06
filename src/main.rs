@@ -383,6 +383,19 @@ fn generate_commit_message_with_prompt(diff: &str, extra_prompt: &str) -> Result
         .to_string())
 }
 
+fn cleanup_target_directory() {
+    if let Ok(current_dir) = std::env::current_dir() {
+        let target_dir = current_dir.join("target");
+        if target_dir.exists() {
+            if let Err(e) = std::fs::remove_dir_all(&target_dir) {
+                println!("警告: 清理 target 目录失败: {}", e);
+            } else {
+                println!("✅ 已清理 target 目录");
+            }
+        }
+    }
+}
+
 fn main() {
     let matches = App::new("svn-hook")
         .version("0.1.0")
@@ -400,7 +413,8 @@ fn main() {
             let files: Vec<String> = sub_matches.values_of("files")
                 .map(|values| values.map(String::from).collect())
                 .unwrap_or_else(Vec::new);
-            handle_commit(files)
+            handle_commit(files);
+            cleanup_target_directory();
         },
         _ => println!("使用 --help 查看帮助信息"),
     }
