@@ -6,6 +6,8 @@
 
 在日常开发中，编写规范的 SVN 提交信息是一个重要但容易被忽视的任务。本工具旨在通过 AI 技术自动分析代码变更，生成清晰、规范的提交信息，提高代码管理的质量和效率。
 
+本项目的思路和配置设计来源于 [commit_crafter](https://github.com/yzzting/commit_crafter)，这是一个优秀的 Git 提交信息生成工具。我们将其核心理念应用到 SVN 环境中，并复用了其配置文件设计，以保持一致的用户体验。
+
 ## 技术特点
 
 - **Rust 实现**：使用 Rust 语言开发，保证了工具的性能和安全性
@@ -87,7 +89,7 @@
 ### 配置文件
 
 #### 文件路径
-配置文件位置：
+配置文件位置（与 commit_crafter 保持一致）：
 
 - Unix/macOS: `~/.config/commit_crafter/config.toml`
 - Windows: `%APPDATA%\commit_crafter\config.toml`
