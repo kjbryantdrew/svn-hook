@@ -120,28 +120,48 @@ fn get_svn_diff_for_files(files: &[String]) -> Result<String, String> {
 
 fn commit_with_message_for_files(message: &str, files: &[String]) -> Result<(), String> {
     let mut command = Command::new("svn");
-    command.arg("commit")
-        .arg("-m")
-        .arg(message);
-    
-    // 如果指定了文件，添加到命令中
+    command.arg("commit").arg("-m").arg(message);
     for file in files {
         command.arg(file);
     }
 
     let output = command
         .output()
-        .map_err(|e| format!("执行 svn commit 失败: {}", e))?;
+        .map_err(|e| format!("执行命令失败: {}", e))?;
 
     if !output.status.success() {
-        return Err(format!("svn commit 返回错误: {}", 
-            String::from_utf8_lossy(&output.stderr)));
+        let error = String::from_utf8_lossy(&output.stderr);
+        // 检查是否需要输入密码
+        if error.contains("无法取得密码") || error.contains("Unable to connect") {
+            println!("需要输入密码，正在切换到交互模式...");
+            
+            // 重新执行命令，这次使用spawn让SVN可以直接与终端交互
+            let mut interactive_command = Command::new("svn");
+            interactive_command.arg("commit").arg("-m").arg(message);
+            for file in files {
+                interactive_command.arg(file);
+            }
+            
+            let mut child = interactive_command
+                .spawn()
+                .map_err(|e| format!("执行命令失败: {}", e))?;
+            
+            // 等待命令完成
+            let status = child.wait()
+                .map_err(|e| format!("等待命令完成失败: {}", e))?;
+
+            if !status.success() {
+                return Err("提交失败，请检查密码是否正确".to_string());
+            }
+            return Ok(());
+        }
+        return Err(error.to_string());
     }
 
     Ok(())
 }
 
-// 添加一个函数来获取配置
+// 获取配置
 fn get_config() -> Result<Config, String> {
     let config_file = get_config_file().ok_or("无法获取配置目录")?;
     let contents = fs::read_to_string(&config_file)
