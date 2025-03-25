@@ -173,32 +173,44 @@ fn get_config() -> Result<Config, String> {
 fn get_system_prompt(language: &str) -> String {
     match language {
         "zh" => format!(
-            "生成极简SVN提交信息，要求：\n\
-             1. 动词开头，简述核心变更\n\
-             2. 不超过10个字\n\
-             3. 不要解释细节，只提炼最关键改动\n\
-             4. 不要使用标点符号"
+            "生成精简的SVN提交信息：\n\
+             1. 控制在15字以内\n\
+             2. 只提取最核心动作和目的\n\
+             3. 忽略具体文件名和细节\n\
+             4. 不列举具体项目\n\
+             5. 不使用标点符号\n\
+             6. 严禁输出任何推理过程或解释\n\
+             7. 只输出提交信息本身，不要有其他任何内容"
         ),
         "en" => format!(
             "Generate minimal SVN commit message:\n\
-             1. Start with a verb\n\
-             2. Max 5 words\n\
-             3. Focus only on core changes\n\
-             4. No punctuation"
+             1. Maximum 8 words\n\
+             2. Extract only core action and purpose\n\
+             3. Ignore specific filenames and details\n\
+             4. No listing of items\n\
+             5. No punctuation\n\
+             6. Strictly forbidden to output any reasoning process\n\
+             7. Output only the commit message itself with no other content"
         ),
         "ja" => format!(
-            "極簡単なSVNコミットメッセージ：\n\
-             1. 動詞で始める\n\
-             2. 10字以内\n\
-             3. 詳細説明なし、核心変更のみ\n\
-             4. 句読点使用禁止"
+            "簡潔なSVNコミットメッセージ：\n\
+             1. 15字以内\n\
+             2. 核心動作と目的のみ\n\
+             3. ファイル名や詳細は無視\n\
+             4. 項目列挙禁止\n\
+             5. 句読点使用禁止\n\
+             6. 推論過程の出力は厳禁\n\
+             7. コミットメッセージのみを出力し他の内容は含めない"
         ),
         _ => format!(
             "Generate minimal SVN commit message:\n\
-             1. Start with a verb\n\
-             2. Max 5 words\n\
-             3. Focus only on core changes\n\
-             4. No punctuation"
+             1. Maximum 8 words\n\
+             2. Extract only core action and purpose\n\
+             3. Ignore specific filenames and details\n\
+             4. No listing of items\n\
+             5. No punctuation\n\
+             6. Strictly forbidden to output any reasoning process\n\
+             7. Output only the commit message itself with no other content"
         ),
     }
 }
