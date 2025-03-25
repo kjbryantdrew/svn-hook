@@ -173,28 +173,20 @@ fn get_config() -> Result<Config, String> {
 fn get_system_prompt(language: &str) -> String {
     match language {
         "zh" => format!(
-            "根据代码差异生成提交信息：\n\
-             1. 用动词开头描述变更类型\n\
-             2. 简述变更目的\n\
-             3. 不超过150token"
+            "用一句话描述代码改动，要求：\n\
+             动词开头 + 简述目的，限20字内"
         ),
         "en" => format!(
-            "Generate commit message from diff:\n\
-             1. Start with a verb describing change type\n\
-             2. Briefly state the purpose\n\
-             3. Max 150 tokens"
+            "Describe code changes in one line:\n\
+             verb + purpose, max 10 words"
         ),
         "ja" => format!(
-            "差分に基づいてコミットメッセージを生成：\n\
-             1. 変更タイプを動詞で始める\n\
-             2. 変更目的を簡潔に述べる\n\
-             3. 150トークン以内"
+            "コード変更を一文で：\n\
+             動詞で始めて目的を述べる、20字以内"
         ),
         _ => format!(
-            "Generate commit message from diff:\n\
-             1. Start with a verb describing change type\n\
-             2. Briefly state the purpose\n\
-             3. Max 150 tokens"
+            "Describe code changes in one line:\n\
+             verb + purpose, max 10 words"
         ),
     }
 }
