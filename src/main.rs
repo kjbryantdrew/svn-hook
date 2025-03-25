@@ -173,20 +173,32 @@ fn get_config() -> Result<Config, String> {
 fn get_system_prompt(language: &str) -> String {
     match language {
         "zh" => format!(
-            "用一句话描述代码改动，要求：\n\
-             动词开头 + 简述目的，限20字内"
+            "生成极简SVN提交信息，要求：\n\
+             1. 动词开头，简述核心变更\n\
+             2. 不超过10个字\n\
+             3. 不要解释细节，只提炼最关键改动\n\
+             4. 不要使用标点符号"
         ),
         "en" => format!(
-            "Describe code changes in one line:\n\
-             verb + purpose, max 10 words"
+            "Generate minimal SVN commit message:\n\
+             1. Start with a verb\n\
+             2. Max 5 words\n\
+             3. Focus only on core changes\n\
+             4. No punctuation"
         ),
         "ja" => format!(
-            "コード変更を一文で：\n\
-             動詞で始めて目的を述べる、20字以内"
+            "極簡単なSVNコミットメッセージ：\n\
+             1. 動詞で始める\n\
+             2. 10字以内\n\
+             3. 詳細説明なし、核心変更のみ\n\
+             4. 句読点使用禁止"
         ),
         _ => format!(
-            "Describe code changes in one line:\n\
-             verb + purpose, max 10 words"
+            "Generate minimal SVN commit message:\n\
+             1. Start with a verb\n\
+             2. Max 5 words\n\
+             3. Focus only on core changes\n\
+             4. No punctuation"
         ),
     }
 }
