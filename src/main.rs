@@ -173,36 +173,28 @@ fn get_config() -> Result<Config, String> {
 fn get_system_prompt(language: &str) -> String {
     match language {
         "zh" => format!(
-            "你是一个代码审查专家，请用中文生成简洁的提交信息。\n\
-             要求：\n\
-             1. 只描述修改的主要功能和目的\n\
-             2. 不要提及具体的修改内容\n\
-             3. 保持信息简短，一般不超过一行\n\
-             4. 使用动词开头，描述做了什么"
+            "根据代码差异生成提交信息：\n\
+             1. 用动词开头描述变更类型\n\
+             2. 简述变更目的\n\
+             3. 不超过150token"
         ),
         "en" => format!(
-            "You are a code review expert. Please generate a concise commit message in English.\n\
-             Requirements:\n\
-             1. Only describe the main functionality and purpose of the changes\n\
-             2. Do not mention specific modification details\n\
-             3. Keep the message brief, typically one line\n\
-             4. Start with a verb, describing what was done"
+            "Generate commit message from diff:\n\
+             1. Start with a verb describing change type\n\
+             2. Briefly state the purpose\n\
+             3. Max 150 tokens"
         ),
         "ja" => format!(
-            "あなたはコードレビューの専門家です。簡潔なコミットメッセージを日本語で生成してください。\n\
-             要件：\n\
-             1. 変更の主な機能と目的のみを説明する\n\
-             2. 具体的な変更内容には触れない\n\
-             3. メッセージは簡潔に、通常1行以内\n\
-             4. 動詞で始め、何をしたかを説明する"
+            "差分に基づいてコミットメッセージを生成：\n\
+             1. 変更タイプを動詞で始める\n\
+             2. 変更目的を簡潔に述べる\n\
+             3. 150トークン以内"
         ),
         _ => format!(
-            "You are a code review expert. Please generate a concise commit message in English.\n\
-             Requirements:\n\
-             1. Only describe the main functionality and purpose of the changes\n\
-             2. Do not mention specific modification details\n\
-             3. Keep the message brief, typically one line\n\
-             4. Start with a verb, describing what was done"
+            "Generate commit message from diff:\n\
+             1. Start with a verb describing change type\n\
+             2. Briefly state the purpose\n\
+             3. Max 150 tokens"
         ),
     }
 }
