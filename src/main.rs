@@ -265,21 +265,6 @@ fn handle_commit(files: Vec<String>) {
         return;
     }
 
-    // 显示当前提示词设置
-    match get_config() {
-        Ok(config) => {
-            println!("当前提示词设置：");
-            println!("{}", "-".repeat(50));
-            println!("{}", get_system_prompt(&config.user_language));
-            println!("{}", "-".repeat(50));
-            println!();
-        },
-        Err(e) => {
-            println!("获取配置失败: {}", e);
-            return;
-        }
-    };
-
     // 1. 获取变更
     println!("正在获取变更信息...");
     let diff = match get_svn_diff_for_files(&files) {
