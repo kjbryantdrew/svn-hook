@@ -1,4 +1,121 @@
-# SVN Hook
+[中文版 (Chinese)](README_zh-CN.md)
+
+# SVN AI Commit Hook - Intelligent SVN Commit Message Assistant
+
+`SVN AI Commit Hook` is a powerful Subversion (SVN) pre-commit hook script that leverages the capabilities of Artificial Intelligence (AI) to automatically generate standardized, clear, and informative commit messages based on your staged changes. Say goodbye to the tedious task of manually writing commit messages and let AI help you improve version control efficiency and quality.
+
+## ✨ Core Features
+
+- **🤖 AI-Driven Commit Message Generation**: Automatically triggers when you execute the `svn commit` command (if no commit message is provided via `-m` or `-F` arguments), analyzes the differences (diff) of the current commit, and calls an AI model (like the GPT series) to generate high-quality commit messages.
+- **📝 Standardization and Consistency**: Ensures a unified style for team commit messages, adhering to preset formats and language requirements (e.g., Chinese or English, and specific commit type prefixes).
+- **⏱️ Save Time, Enhance Efficiency**: Significantly reduces the time developers spend thinking about and writing commit messages, allowing them to focus more on coding.
+- **💡 Context-Aware**: The AI can understand the intent of code changes, generating more descriptive commit messages than generic templates.
+- **⚙️ Flexible Configuration**: Through the shared configuration file `~/.config/commit_crafter/config.toml`, you can easily set API keys, AI models, and the desired commit message language.
+- **💬 Interactive Confirmation**: Before automatically committing, it displays the AI-generated commit message and allows you to **confirm usage**, **manually edit**, or **cancel the current commit**, ensuring you have full control over the final commit message.
+
+## 📋 Prerequisites and Configuration
+
+This hook script is actually a Rust-compiled executable program that handles interaction with the AI service and user prompts.
+
+1.  **Rust Executable Program (`svn-hook`)**:
+    Ensure you have compiled and installed the `svn-hook` program using the `install.sh` script provided in the project. This script typically installs the executable to `~/.cargo/bin/`. Make sure this directory is in your system's `PATH` environment variable.
+
+2.  **Create and Configure `config.toml`**:
+    This tool shares the configuration file located at `~/.config/commit_crafter/config.toml` with `File Organizer`.
+    If you haven't configured it yet, please do the following:
+    ```bash
+    # Create directory (if it doesn't exist)
+    mkdir -p ~/.config/commit_crafter
+    
+    # Create configuration file (if it doesn't exist)
+    touch ~/.config/commit_crafter/config.toml
+    ```
+    Fill in the `config.toml` file with the following content:
+    ```toml
+    # Your OpenAI API Key
+    openai_api_key = "sk-your-key-here"
+
+    # Base URL for the OpenAI API (modify if using a proxy)
+    openai_url = "https://api.openai.com"
+
+    # AI model for generating commit messages
+    openai_model = "gpt-4-turbo" # or your preferred model
+
+    # (Optional) Specify the language for AI to use when generating commit messages
+    user_language = "Chinese" # or "English"
+    ```
+
+## 🔧 SVN Hook Configuration
+
+To enable this AI commit assistant, you need to configure a `pre-commit` hook in your SVN repository. This hook script will call our compiled `svn-hook` Rust program.
+
+1.  **Locate Hook Directory**:
+    For server-side hooks (recommended), navigate to the `hooks` directory of your SVN repository on the server.
+    For client-side hooks (may not be supported or recommended by some SVN versions/configurations), it might be in the `.svn/hooks/` directory of the working copy (but this is generally for local validation, not centralized control).
+
+2.  **Create `pre-commit` Script**:
+    In the hook directory, create an executable script named `pre-commit` (e.g., on Linux/macOS). On Windows, it might be `pre-commit.bat`.
+
+3.  **Example `pre-commit` Script Content (Linux/macOS)**:
+    ```bash
+    #!/bin/bash
+
+    REPOS="$1"  # Repository path (passed by SVN)
+    TXN="$2"    # Transaction name (passed by SVN)
+
+    # Path to the svn-hook executable (if in PATH, just 'svn-hook')
+    SVN_HOOK_EXEC="svn-hook"
+
+    # Check if the user provided a commit message via -m or -F
+    # svnlook log "$REPOS" -t "$TXN" would return that message.
+    # The svn-hook program itself handles this logic: if a message is provided, it exits and allows the commit.
+
+    # Create a temporary file to store the output of svn-hook (the final commit message)
+    TMP_MSG_FILE=$(mktemp)
+
+    # Call the svn-hook Rust program.
+    # It will interact with the user, and if confirmed, print the final commit message to stdout.
+    # Errors will be printed to stderr.
+    if $SVN_HOOK_EXEC --repo-path "$REPOS" --txn "$TXN" > "$TMP_MSG_FILE"; then
+        # svn-hook exited successfully (user confirmed the commit message)
+        # Set the svn:log property using the content of the temporary file.
+        if [ -s "$TMP_MSG_FILE" ]; then # Ensure the temp file has content
+            svnlook propset --txn "$TXN" "$REPOS" svn:log -F "$TMP_MSG_FILE"
+            rm "$TMP_MSG_FILE"
+            exit 0 # Allow commit
+        else
+            # Should not happen: successful exit but no commit message
+            echo "Error: svn-hook executed successfully but provided no commit message." >&2
+            rm "$TMP_MSG_FILE"
+            exit 1 # Block commit
+        fi
+    else
+        # svn-hook exited with an error (user cancelled, AI call failed, etc.)
+        # The Rust program should have printed an error message to stderr, which the SVN client will display.
+        rm "$TMP_MSG_FILE"
+        exit 1 # Block commit
+    fi
+    ```
+    **Important Notes**:
+    *   Ensure the `pre-commit` script has execute permissions (`chmod +x pre-commit`).
+    *   The `SVN_HOOK_EXEC` variable should point to your compiled and installed `svn-hook` Rust program. If it's in the system's `PATH`, `svn-hook` is sufficient.
+    *   The core logic of this script is: call the `svn-hook` program, capture its standard output (the user-confirmed commit message), and use this message to set the `svn:log` property for the current SVN transaction.
+
+## 💡 Usage Flow
+
+1.  Make code changes in your SVN working copy.
+2.  Execute `svn add ...` (if adding new files) and then `svn commit`.
+3.  When you execute `svn commit`:
+    *   If you **do not** provide a commit message via `-m "message"` or `-F file`, the `pre-commit` hook will trigger the `svn-hook` program.
+    *   If you **have** provided a commit message, the `svn-hook` program will detect this and allow the commit directly, skipping the AI generation step.
+4.  If AI is triggered: The AI will analyze your changes and generate a suggested commit message.
+5.  You will see the suggested commit message in your terminal and can choose:
+    - **(y)es**: Commit directly using the AI-generated message.
+    - **(e)dit**: Modify the AI-generated message in your default text editor, then save and close the editor to commit.
+    - **(n)o**: Cancel the current commit.
+
+---
+*This tool was developed with the assistance of Cascade (a world-class AI coding assistant).*
 
 一个基于 Rust 实现的 SVN 提交信息生成工具，通过调用大模型 API 自动生成规范的提交说明。
 
