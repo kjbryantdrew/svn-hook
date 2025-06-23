@@ -30,5 +30,3 @@ else
     echo "❌ 安装失败"
     exit 1
 fi 
-
-echo "test"
