@@ -12,6 +12,22 @@
 - **💡 Context-Aware**: The AI can understand the intent of code changes, generating more descriptive commit messages than generic templates.
 - **⚙️ Flexible Configuration**: Through the shared configuration file `~/.config/commit_crafter/config.toml`, you can easily set API keys, AI models, and the desired commit message language.
 - **💬 Interactive Confirmation**: Before automatically committing, it displays the AI-generated commit message and allows you to **confirm usage**, **manually edit**, or **cancel the current commit**, ensuring you have full control over the final commit message.
+- **🤝 Git Integration (Optional)**: If the SVN project is also a Git repository, the tool will offer to create a corresponding Git commit with the same AI-generated message after a successful SVN commit.
+
+## 🤝 Git Integration
+
+If your SVN working copy is also a Git repository, `svn-hook` provides an additional feature to keep your repositories in sync.
+
+### How It Works
+
+1.  **Automatic Detection**: The tool automatically checks if the current directory is a Git repository.
+2.  **SVN Commit First**: The standard SVN commit process proceeds as usual.
+3.  **Confirmation for Git Commit**: After a successful SVN commit, if a Git repository is detected, the tool will prompt you for a secondary Git commit.
+    - It will display the exact `git add` and `git commit` commands that will be executed.
+    - The files added to the Git stage will be the same as those you specified for the SVN commit. If you didn't specify any files (committing all changes), it will use `git add .`.
+4.  **User Control**: The Git commit is **only** executed if you confirm the prompt. You can safely decline to skip the Git commit for that instance.
+
+This feature ensures that for hybrid projects, your commit history can be consistently maintained across both version control systems with minimal extra effort.
 
 ## 📋 Prerequisites and Configuration
 
@@ -113,6 +129,9 @@ To enable this AI commit assistant, you need to configure a `pre-commit` hook in
     - **(y)es**: Commit directly using the AI-generated message.
     - **(e)dit**: Modify the AI-generated message in your default text editor, then save and close the editor to commit.
     - **(n)o**: Cancel the current commit.
+6.  **Git Commit (Optional)**:
+    *   After a successful SVN commit, if the tool detects that the current directory is also a Git repository, it will display the `git` commands to be executed and ask if you want to proceed with a Git commit.
+    *   You can choose **(y)es** to confirm and complete the Git commit, or **(n)o** to skip it.
 
 ---
 *This tool was developed with the assistance of Cascade (a world-class AI coding assistant).*
