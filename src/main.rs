@@ -97,6 +97,116 @@ fn check_svn_installed() -> bool {
     }
 }
 
+// 检查 Git 是否安装
+fn check_git_installed() -> bool {
+    match std::process::Command::new("git").arg("--version").output() {
+        Ok(_) => true,
+        Err(_) => {
+            // Git 是可选的，所以只打印一条信息
+            println!("信息: 未检测到 Git，将跳过 Git 相关操作。");
+            false
+        }
+    }
+}
+
+// 检查当前目录是否为 Git 仓库
+fn is_git_repository() -> bool {
+    if !check_git_installed() {
+        return false;
+    }
+    match Command::new("git").args(&["rev-parse", "--is-inside-work-tree"]).output() {
+        Ok(output) => {
+            output.status.success() && String::from_utf8_lossy(&output.stdout).trim() == "true"
+        }
+        Err(_) => false,
+    }
+}
+
+// 向 Git 提交
+fn commit_to_git(message: &str, files: &[String]) -> Result<(), String> {
+    println!("\n检测到 Git 仓库。");
+
+    // 构造将要执行的命令字符串用于显示
+    let mut git_add_cmd_str = "git add".to_string();
+    if files.is_empty() {
+        git_add_cmd_str.push_str(" .");
+    } else {
+        for file in files {
+            git_add_cmd_str.push(' ');
+            git_add_cmd_str.push_str(file);
+        }
+    }
+    let git_commit_cmd_str = format!("git commit -m \"{}\"", message);
+
+    println!("将执行以下命令:");
+    println!("  {}", git_add_cmd_str);
+    println!("  {}", git_commit_cmd_str);
+    println!("\n是否确认执行 Git 提交? [Y/n]:");
+
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+
+    match input.trim().to_lowercase().as_str() {
+        "y" | "" => {
+            println!("正在执行 Git 提交...");
+            // 根据是否提供了文件列表来决定是添加指定文件还是所有变更
+            let mut add_command = Command::new("git");
+            add_command.arg("add");
+            if files.is_empty() {
+                // 如果没有指定文件，则添加所有变更
+                add_command.arg(".");
+            } else {
+                // 否则只添加指定的文件
+                for file in files {
+                    add_command.arg(file);
+                }
+            }
+
+            let add_output = add_command
+                .output()
+                .map_err(|e| format!("执行 git add 失败: {}", e))?;
+
+            if !add_output.status.success() {
+                return Err(format!(
+                    "git add 返回错误: {}",
+                    String::from_utf8_lossy(&add_output.stderr)
+                ));
+            }
+
+            // git commit -m "message"
+            let commit_output = Command::new("git")
+                .arg("commit")
+                .arg("-m")
+                .arg(message)
+                .output()
+                .map_err(|e| format!("执行 git commit 失败: {}", e))?;
+
+            if !commit_output.status.success() {
+                let stderr = String::from_utf8_lossy(&commit_output.stderr);
+                if stderr.contains("nothing to commit") || stderr.contains("无文件要提交") {
+                    println!("Git 仓库没有变更，无需提交。");
+                    return Ok(());
+                }
+                return Err(format!(
+                    "git commit 返回错误: {}",
+                    stderr
+                ));
+            }
+
+            println!("✅ Git 提交成功!");
+            Ok(())
+        }
+        "n" => {
+            println!("已取消 Git 提交。");
+            Ok(())
+        }
+        _ => {
+            println!("无效的选择，已取消 Git 提交。");
+            Ok(())
+        }
+    }
+}
+
 fn get_svn_diff_for_files(files: &[String]) -> Result<String, String> {
     let mut command = Command::new("svn");
     command.arg("diff");
@@ -325,7 +435,14 @@ fn handle_commit(files: Vec<String>) {
                 println!("\n正在提交...");
                 match commit_with_message_for_files(&commit_message, &files) {
                     Ok(_) => {
-                        println!("✅ 提交成功!");
+                        println!("✅ SVN 提交成功!");
+
+                        // 如果是Git仓库，也提交到Git
+                        if is_git_repository() {
+                            if let Err(e) = commit_to_git(&commit_message, &files) {
+                                println!("警告: Git 提交失败: {}", e);
+                            }
+                        }
                         break;
                     }
                     Err(e) => {
