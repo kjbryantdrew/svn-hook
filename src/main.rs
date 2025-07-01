@@ -12,6 +12,13 @@ struct Config {
     openai_url: String,
     openai_model: String,
     user_language: String,
+    #[serde(default = "default_max_diff_chars")]
+    max_diff_chars: usize,
+}
+
+// 默认最大字符数
+fn default_max_diff_chars() -> usize {
+    8000
 }
 
 // 获取配置文件路径
@@ -280,6 +287,22 @@ fn get_config() -> Result<Config, String> {
         .map_err(|e| format!("解析配置文件失败: {}", e))
 }
 
+// 截断diff内容
+fn truncate_diff_content(content: &str, max_chars: usize) -> String {
+    if content.len() <= max_chars {
+        return content.to_string();
+    }
+    
+    let truncated = &content[..max_chars];
+    let last_newline = truncated.rfind('\n').unwrap_or(max_chars);
+    let mut result = content[..last_newline].to_string();
+    
+    result.push_str("\n\n[... 内容过长，已截断 ...]");
+    result.push_str(&format!("\n[原始长度: {} 字符，截断后: {} 字符]", content.len(), result.len()));
+    
+    result
+}
+
 fn get_system_prompt(language: &str) -> String {
     match language {
         "zh" => format!(
@@ -390,23 +413,39 @@ fn handle_commit(files: Vec<String>) {
         return;
     }
 
+    // 获取配置以获取字符数限制
+    let config = match get_config() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            println!("获取配置失败: {}", e);
+            return;
+        }
+    };
+    
+    // 显示当前diff信息
+    let original_length = diff.len();
+    println!("SVN差异信息: 总字符数 {} | 限制字符数 {}", original_length, config.max_diff_chars);
+    
+    // 截断diff内容
+    let truncated_diff = truncate_diff_content(&diff, config.max_diff_chars);
+    
+    // 如果内容被截断，显示额外提示信息
+    if truncated_diff.len() < diff.len() {
+        println!("⚠️  内容已截断: {} → {} 字符", original_length, config.max_diff_chars);
+    } else {
+        println!("✅ 内容未超出限制，无需截断");
+    }
+
     let mut extra_prompt: Option<String> = None;
 
     loop {
         // 2. 调用AI生成提交信息
         println!("正在生成提交信息...");
-        let config = match get_config() {
-            Ok(cfg) => cfg,
-            Err(e) => {
-                println!("获取配置失败: {}", e);
-                return;
-            }
-        };
         
         let commit_message = match if let Some(ref prompt) = extra_prompt {
-            generate_commit_message_with_prompt(&diff, prompt)
+            generate_commit_message_with_prompt(&truncated_diff, prompt)
         } else {
-            generate_commit_message(&diff)
+            generate_commit_message(&truncated_diff)
         } {
             Ok(message) => message,
             Err(e) => {
