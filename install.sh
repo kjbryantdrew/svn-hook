@@ -23,6 +23,18 @@ if cargo install --path .; then
         echo "警告: 清理 target 目录失败"
     fi
     
+    # 删除 Cargo.lock 文件
+    echo "正在删除 Cargo.lock 文件..."
+    if [ -f "Cargo.lock" ]; then
+        if rm -f Cargo.lock; then
+            echo "✅ Cargo.lock 文件删除完成"
+        else
+            echo "警告: 删除 Cargo.lock 文件失败"
+        fi
+    else
+        echo "Cargo.lock 文件不存在，跳过删除"
+    fi
+    
     echo -e "\n使用说明:"
     echo "1. 确保已创建配置文件: ~/.config/commit_crafter/config.toml"
     echo "2. 在 SVN 工作目录中执行: svn-hook commit"
